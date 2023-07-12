@@ -12,6 +12,7 @@ local KSysLib = GetKismetSystemLibrary() ---@cast KSysLib UKismetSystemLibrary
 local KMathLib = GetKismetMathLibrary() ---@cast KMathLib UKismetMathLibrary
 local KTextLib = StaticFindObject("/Script/Engine.Default__KismetTextLibrary") ---@cast KTextLib UKismetTextLibrary
 local GameFnLib = StaticFindObject("/Script/FSD.Default__GameFunctionLibrary") ---@cast GameFnLib UGameFunctionLibrary
+local SubsysBlueprintLib = StaticFindObject("/Script/Engine.SubsystemBlueprintLibrary") ---@cast SubsysBlueprintLib USubsystemBlueprintLibrary
 
 ---@type UFSDGameInstance
 local GameInstance = nil
@@ -28,6 +29,8 @@ local function Init()
     print("[INFO] " .. string.format("KTextLib: %s", KTextLib) .. "\n")
     if GameFnLib == nil then error("GameFunctionLibrary not valid\n") end
     print("[INFO] " .. string.format("GameFnLib: %s", GameFnLib) .. "\n")
+    if SubsysBlueprintLib == nil or not SubsysBlueprintLib:IsValid() then error("SubsystemBlueprintLibrary not valid\n") end
+    print("[INFO] " .. string.format("SubsystemBlueprintLibrary: %s", SubsysBlueprintLib) .. "\n")
     GameInstance = FindFirstOf("FSDGameInstance")
     if GameInstance == nil or not GameInstance:IsValid() then
         error("could not find FSDGameInstance")
@@ -59,8 +62,12 @@ local function SelectDeepDive()
         return
     end
 
-    ---@type UDeepDiveManager
-    local DeepDiveManager = GameInstance.DeepDiveManager
+    local DeepDiveManager = FindFirstOf("DeepDiveManager") ---@cast DeepDiveManager UDeepDiveManager
+    if DeepDiveManager == nil or not DeepDiveManager:IsValid() then
+        error("DeepDiveManager is invalid")
+        return
+    end
+
     ---@type UDeepDive
     local NormalDeepDive = DeepDiveManager:GetActiveNormalDeepDive()
     if NormalDeepDive == nil or not NormalDeepDive:IsValid() then
@@ -74,6 +81,27 @@ local function SelectDeepDive()
     local Missions = NormalDeepDive.missions
 
     PrintDiveMissions(Missions)
+
+    DeepDiveManager:SetDeepDive(NormalDeepDive)
+    print(string.format("[INFO] DeepDiveManager CurrentMission: %s", DeepDiveManager.CurrentMission))
+
+    local MissionModeManager = FindFirstOf("DeepDiveManager") ---@cast MissionModeManager IMissionModeManager
+    if MissionModeManager == nil or not MissionModeManager:IsValid() then
+        error("MissionModeManager is invalid")
+        return
+    end
+
+    MissionModeManager:StartDive()
+
+    -- GameInstance:SetSelectedMission(DeepDiveManager.CurrentMission, true)
+
+    -- local PlayerController = GameInstance:GetLocalFSDPlayerController()
+    -- local GameMode = GameFnLib:GetFSDGameMode(PlayerController)
+    -- if GameMode:IsA('/Game/Game/SpaceRig/BP_SpaceRig_GamemOde.BP_SpaceRig_Gamemode_C') then
+    --     print("[INFO] detected user is loaded into space rig\n")
+    --     GameMode --[[@as ABP_SpaceRig_Gamemode_C]]:InstantlyStartMission()
+    --     print("[INFO] attempted to instantly start mission\n")
+    -- end
 end
 
 local function SelectEliteDeepDive()
@@ -97,6 +125,18 @@ local function SelectEliteDeepDive()
     local Missions = EliteDeepDive.missions
 
     PrintDiveMissions(Missions)
+
+    local WorldCtxt = GameInstance:GetLocalFSDPlayerController()
+    local MissionGenerationManager = SubsysBlueprintLib:GetGameInstanceSubsystem(WorldCtxt, UMissionGenerationManager) ---@cast MissionGenerationManager UMissionGenerationManager
+
+    local AvailableMissions = MissionGenerationManager:GetAvailableMissions()
+    local GeneratedMission = AvailableMissions:__index(0)
+    GameInstance:SetSelectedMission(GeneratedMission, true)
+
+    DeepDiveManager:SetDeepDive(EliteDeepDive)
+
+    local WorldCtxt = GameInstance:GetLocalFSDPlayerController()
+    DeepDiveManager --[[@as IMissionModeManager]]:StartDive()
 end
 
 RegisterKeyBind(Key.Z, Init)
