@@ -40,11 +40,11 @@ end
 ---@param Missions TArray<UGeneratedMission>
 local function PrintDiveMissions(Missions)
     Missions:ForEach(function(Level, Mission)
-        print(string.format('===STAGE %i: ===', Level))
-        print(string.format('duration: %s', ToString(Mission:get().DurationLimit)))
-        print(string.format('complexity: %s', ToString(Mission:get().ComplexityLimit)))
-        print(string.format('primary obj: %s', ToString(Mission:get().PrimaryObjective)))
-        print(string.format('secondary obj: %s', table.concat(
+        print(string.format('=== STAGE %i: ===', Level))
+        print(string.format('Duration: %s', ToString(Mission:get().DurationLimit)))
+        print(string.format('Complexity: %s', ToString(Mission:get().ComplexityLimit)))
+        print(string.format('Primary objectives: %s', ToString(Mission:get().PrimaryObjective)))
+        print(string.format('Secondary objectives: %s', table.concat(
             Map(
                 Mission:get().SecondaryObjectives,
                 function(v) return ToString(v) end
@@ -66,11 +66,39 @@ local function SelectDeepDive()
     if NormalDeepDive == nil or not NormalDeepDive:IsValid() then
         error("NormalDeepDive is invalid")
     end
+    print("<<<<<< NORMAL DEEP DIVE >>>>>>\n")
+    -- FIXME: the following crashes
+    -- print("Codename:", KTextLib:Conv_TextToString(NormalDeepDive.DeepDiveName))
+    print("Biome:", NormalDeepDive.Biome:GetFullName())
     ---@type TArray<UGeneratedMission>
     local Missions = NormalDeepDive.missions
 
     PrintDiveMissions(Missions)
 end
 
+local function SelectEliteDeepDive()
+    if not IsInitialized then
+        error("DeepDiveInfo mod failed to initialize")
+        return
+    end
+
+    ---@type UDeepDiveManager
+    local DeepDiveManager = GameInstance.DeepDiveManager
+    ---@type UDeepDive
+    local EliteDeepDive = DeepDiveManager:GetActiveHardDeepDive()
+    if EliteDeepDive == nil or not EliteDeepDive:IsValid() then
+        error("EliteDeepDive is invalid")
+    end
+    print("<<<<<< ELITE DEEP DIVE >>>>>>\n")
+    -- FIXME: the following crashes
+    -- print("Codename:", KTextLib:Conv_TextToString(EliteDeepDive.DeepDiveName))
+    print("Biome:", EliteDeepDive.Biome:GetFullName())
+    ---@type TArray<UGeneratedMission>
+    local Missions = EliteDeepDive.missions
+
+    PrintDiveMissions(Missions)
+end
+
 RegisterKeyBind(Key.Z, Init)
-RegisterKeyBind(Key.X, SelectDeepDive)
+RegisterKeyBind(Key.C, SelectDeepDive)
+RegisterKeyBind(Key.V, SelectEliteDeepDive)
