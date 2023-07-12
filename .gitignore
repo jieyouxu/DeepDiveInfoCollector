@@ -8,3 +8,5 @@ Keybinds/
 LineTraceMod/
 shared/
 SplitScreenMod/
+**/.vscode/
+*.code-workspace
